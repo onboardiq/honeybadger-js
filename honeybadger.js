@@ -64,6 +64,11 @@
       currentPayload;
 
   // Utilities.
+  function is(type, obj) {
+    var klass = Object.prototype.toString.call(obj).slice(8, -1);
+    return obj !== undefined && obj !== null && klass === type;
+  }
+
   function merge(obj1, obj2) {
     var obj3 = {};
     for (k in obj1) { obj3[k] = obj1[k]; }
@@ -147,7 +152,7 @@
       context: {},
       beforeNotifyHandlers: []
     }
-    if (opts instanceof Object) {
+    if (is('Object', opts)) {
       for (k in opts) { self[k] = opts[k]; }
     }
 
@@ -180,7 +185,7 @@
       }
       for (k in obj) {
         v = obj[k];
-        if (v instanceof Function) { v = '[FUNC]' }
+        if (is('Function', v)) { v = '[FUNC]' }
         if (obj.hasOwnProperty(k) && (k != null) && (v != null)) {
           pk = (prefix ? prefix + '[' + k + ']' : k);
           ret.push(typeof v === 'object' ? serialize(v, pk, depth+1) : encodeURIComponent(pk) + '=' + encodeURIComponent(v));
@@ -224,12 +229,13 @@
 
     function notify(err, generated) {
       if (config('disabled', false)) { return false; }
-      if (!(err instanceof Object)) { return false; }
 
-      if (err instanceof Error) {
+      if (is('Error', err)) {
         var e = err;
         err = {name: e.name, message: e.message, stack: stackTrace(e)};
       }
+
+      if (!(is('Object', err))) { return false; }
 
       if (currentErrIs(err)) {
         // Skip the duplicate error.
@@ -346,17 +352,17 @@
     self.notify = function(err, name, extra) {
       if (!err) { err = {}; }
 
-      if (err instanceof Error) {
+      if (is('Error', err)) {
         var e = err;
         err = {name: e.name, message: e.message, stack: stackTrace(e)};
       }
 
-      if (!(err instanceof Object)) {
+      if (!(is('Object', err))) {
         var m = String(err);
         err = {message: m};
       }
 
-      if (name && !(name instanceof Object)) {
+      if (name && !(is('Object', name))) {
         var n = String(name);
         name = {name: n};
       }
@@ -364,7 +370,7 @@
       if (name) {
         err = merge(err, name);
       }
-      if (extra instanceof Object) {
+      if (is('Object', extra)) {
         err = merge(err, extra);
       }
 
@@ -376,14 +382,14 @@
     };
 
     self.setContext = function(context) {
-      if (context instanceof Object) {
+      if (is('Object', context)) {
         self.context = merge(self.context, context);
       }
       return self;
     };
 
     self.resetContext = function(context) {
-      if (context instanceof Object) {
+      if (is('Object', context)) {
         self.context = merge({}, context);
       } else {
         self.context = {};
@@ -431,7 +437,7 @@
     var instrumentTimer = function(original) {
       // See https://developer.mozilla.org/en-US/docs/Web/API/WindowTimers/setTimeout
       return function(func, delay) {
-        if (func instanceof Function) {
+        if (is('Function', func)) {
           var args = Array.prototype.slice.call(arguments, 2);
           func = wrap(func);
           return original(function() {
@@ -498,7 +504,7 @@
       // See https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
       return function(msg, url, line, col, err) {
         onerror(msg, url, line, col, err);
-        if (original instanceof Function) {
+        if (is('Function', original)) {
           return original.apply(this, arguments);
         }
         return false;
