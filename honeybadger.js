@@ -342,10 +342,8 @@
         }
         if (!fn.___hb) {
           fn.___hb = function() {
-            var onerror = config('onerror', true);
-            // Don't catch if the browser is old or supports the new error
-            // object and there is a window.onerror handler available instead.
-            if ((preferCatch && (onerror || force)) || (force && !onerror)) {
+            // Don't catch if the browser is old
+            if ((preferCatch && force) || force) {
               try {
                 return fn.apply(this, arguments);
               } catch (e) {
@@ -465,66 +463,6 @@
     };
     instrument(window, 'setTimeout', instrumentTimer);
     instrument(window, 'setInterval', instrumentTimer);
-
-    // Event targets borrowed from bugsnag-js:
-    // See https://github.com/bugsnag/bugsnag-js/blob/d55af916a4d3c7757f979d887f9533fe1a04cc93/src/bugsnag.js#L542
-    'EventTarget Window Node ApplicationCache AudioTrackList ChannelMergerNode CryptoOperation EventSource FileReader HTMLUnknownElement IDBDatabase IDBRequest IDBTransaction KeyOperation MediaController MessagePort ModalWindow Notification SVGElementInstance Screen TextTrack TextTrackCue TextTrackList WebSocket WebSocketWorker Worker XMLHttpRequest XMLHttpRequestEventTarget XMLHttpRequestUpload'.replace(/\w+/g, function (prop) {
-      prototype = window[prop] && window[prop].prototype;
-      if (prototype && prototype.hasOwnProperty && prototype.hasOwnProperty('addEventListener')) {
-        instrument(prototype, 'addEventListener', function(original) {
-          // See https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-          return function(type, listener, useCapture, wantsUntrusted) {
-            try {
-              if (listener && listener.handleEvent != null) {
-                listener.handleEvent = wrap(listener.handleEvent);
-              }
-            } catch(e) {
-              // Ignore 'Permission denied to access property "handleEvent"' errors.
-              log(e);
-            }
-            return original.call(this, type, wrap(listener), useCapture, wantsUntrusted);
-          };
-        });
-        instrument(prototype, 'removeEventListener', function(original) {
-          return function(type, listener, useCapture, wantsUntrusted) {
-            original.call(this, type, listener, useCapture, wantsUntrusted);
-            return original.call(this, type, wrap(listener), useCapture, wantsUntrusted);
-          };
-        });
-      }
-    });
-
-    instrument(window, 'onerror', function(original) {
-      function onerror(msg, url, line, col, err) {
-        if (currentErr) { return; }
-        if (!config('onerror', true)) { return; }
-        if (line === 0 && /Script error\.?/.test(msg)) {
-          // See https://developer.mozilla.org/en/docs/Web/API/GlobalEventHandlers/onerror#Notes
-          log('Ignoring cross-domain script error. Use CORS to enable tracking of these types of errors.');
-          return;
-        }
-        log('Error caught by window.onerror');
-        if (err) {
-          notify(err);
-          return;
-        }
-        // simulate v8 stack
-        stack = [msg, '\n    at ? (', url || 'unknown', ':', line || 0, ':', col || 0, ')'].join('');
-        notify({
-          name: 'window.onerror',
-          message: msg,
-          stack: stack
-        });
-      }
-      // See https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
-      return function(msg, url, line, col, err) {
-        onerror(msg, url, line, col, err);
-        if (original instanceof Function) {
-          return original.apply(this, arguments);
-        }
-        return false;
-      };
-    });
 
     // End of instrumentation.
     installed = true;

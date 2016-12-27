@@ -95,9 +95,7 @@ Honeybadger.configure({
 
 ### 2. Start reporting exceptions
 
-By default Honeybadger will report all uncaught exceptions automatically using our `window.onerror` handler.
-
-You can also manually notify Honeybadger of errors and other events in your application code:
+You can manually notify Honeybadger of errors and other events in your application code:
 
 ```javascript
 try {
@@ -135,9 +133,6 @@ Honeybadger.configure({
 
   // Action (optional)
   action: '',
-
-  // Should unhandled (window.onerror) notifications be sent?
-  onerror: true,
 
   // Disable notifications?
   disabled: false
@@ -405,19 +400,6 @@ Honeybadger.beforeNotify(function(err){
   err.cookies = document.cookie;
   return true;
 })
-```
-
-## window.onerror
-
-Honeybadger.js automatically reports uncaught exceptions from window.onerror. To
-disable notifications for uncaught exceptions, set the `onerror` option to
-`false`.
-
-```javascript
-Honeybadger.configure({
-  api_key: 'project api key',
-  onerror: false
-});
 ```
 
 ## Contributing
