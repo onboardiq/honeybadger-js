@@ -298,7 +298,6 @@ describe('Honeybadger', function() {
     beforeEach(function() {
       Honeybadger.configure({
         api_key: 'asdf',
-        onerror: false // Forces the same behavior across all browsers.
       });
     });
 
@@ -413,46 +412,6 @@ describe('Honeybadger', function() {
         expect(requests.length).toEqual(1);
         expect(requests[0].url).not.toMatch('foo');
         expect(requests[0].url).toMatch('notice%5Brequest%5D%5Bcontext%5D%5Bbar%5D=baz');
-      });
-    });
-  });
-
-  describe('window.onerror callback', function() {
-    describe('default behavior', function() {
-      beforeEach(function() {
-        Honeybadger.configure({
-          api_key: 'asdf'
-        });
-      });
-
-      it('notifies Honeybadger of unhandled exceptions', function() {
-        window.onerror('testing', 'http://foo.bar', '123');
-        afterNotify(function() {
-          expect(requests.length).toEqual(1);
-        });
-      });
-
-      it('skips cross-domain script errors', function() {
-        window.onerror('Script error', 'http://foo.bar', 0);
-        afterNotify(function() {
-          expect(requests.length).toEqual(0);
-        });
-      });
-    });
-
-    describe('when onerror is disabled', function() {
-      beforeEach(function() {
-        Honeybadger.configure({
-          api_key: 'asdf',
-          onerror: false
-        });
-      });
-
-      it('ignores unhandled errors', function() {
-        window.onerror('testing', 'http://foo.bar', 0);
-        afterNotify(function() {
-          expect(requests.length).toEqual(0);
-        });
       });
     });
   });
